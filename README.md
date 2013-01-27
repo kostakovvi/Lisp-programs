@@ -1,15 +1,10 @@
-Lisp
-====
-
-my lisp programm
-
 (defparameter *vertex* (make-hash-table :test #'equal))
 (defparameter *arc* (make-hash-table :test #'equal))
 (defparameter *graph* ())
 
 (defun vertex-add (id info)
     (if (eql (nth-value 1 (gethash id *vertex*)) nil)
-  (setf (gethash id *vertex*) info)))
+	(setf (gethash id *vertex*) info)))
 
 
 (defun vertex-del (id)
@@ -21,7 +16,7 @@ my lisp programm
 (defun vertex-info ()
   (progn
     (format t "Все существующие вершины графа~&")
-    (maphash #'(lambda (k v) (format t "ID: ~A Входной тип данных: ~A Выходной тип данных: ~A~&" k (car v) (cadr v))) *vertex*)))
+    (maphash #'(lambda (k v) (format t "ID: ~A Входной тип данных: ~A Выходной тип данных: ~A Значение выходного типа: ~A~&" k (car v) (cadr v) (caddr v))) *vertex*)))
 
 
 (defun vertex-update (id newid info)
@@ -55,11 +50,11 @@ my lisp programm
 
 (defun arc-info ()
   (progn
-    (format t "Все существующие дуги графа~&")
+    (format t "Все существующие дуги графа:~&")
     (maphash #'(lambda (k v) (format t "ID: ~A Начальная вершина: ~A Конечная вершина: ~A~&" k (car v) (cadr v))) *arc*)))
 
 
-(defun graph-info ()
+(defun graph-update ()
 ( let ((start-list ()))
 (defparameter *graph* ())
   (progn    
@@ -73,6 +68,22 @@ my lisp programm
   (setf *graph* (reverse *graph*))
   (format t "Граф выглядит так: ~A~&" *graph*)))
 
+(defun converter (id)
+( let ((t1 (list (car (gethash id *vertex*)) (cadr (gethash id *vertex*)))) (t2 )) 
+    (if (eql (nth-value 1 (gethash id *vertex*)) nil) (format t "Такой вершины не существует!~&")
+	(progn 
+		(loop for k being the hash-keys in *arc* using (hash-value v)
+       			do (progn 
+				(if (equal (cadr v) id)					
+					(setf t2  (append t2  (list (caddr (gethash (car v) *vertex*)))))
+				;(format t "Вершина : ~A не является конечной для какой-либо дуги~&" id)
+				)))
+		(setf t2 (anyfunction t2))
+		(setf t1 (nconc t1 t2))
+		(setf (gethash id *vertex*) t1)))))
+
+(defun anyfunction (x) (loop for i in x   summing i into total
+ finally (return  ( list total))))
 
 ----------------------------------------
 Таблицы и переменные :
@@ -89,18 +100,21 @@ arc-add  Функция добавления дуги, на вход прини�
 вершины с таким именем, существование начальной и конечной вершины в хэш-таблице вершин *vertex*, а также сопоставляются типы входных/выходных данных для этих вершин.
 arc-del  Функция удаления дуги
 arc-info Информация о существующих дугах
-graph-info Функция создания графа на основе существующих дуг
-
+graph-update Функция создания графа на основе существующих дуг
+converter Функция-обработчик, применяет id вершины и в поле выходных данных для данной вершины заносит значение, основанное на результатах вершин-начал дуг, для который данная вершина является конечной
+anyfunction Функция, передаваемая в функцию-обработчик, принимает входные значения, производит преобразование, на месте этой функции мб любая.
 ---------------------------------------
 Примеры использования функций :
-(vertex-add '1 '(type1 type2))
+(vertex-add '1 '(type1 type2 7))
 (vertex-add '2 '(type2 type3))
 (vertex-add '3 '(type3 nil))
 (vertex-add '4 '(type2 type4))
 (vertex-add '5 '(type2 type5))
+(vertex-add '6 '(type2 type6))
 (vertex-add '7 '(type4 type6))
+(vertex-add '8 '(type6 type7))
 
-(vertex-del '2 )
+(vertex-del '6 )
 
 (vertex-info)
 
@@ -115,6 +129,9 @@ graph-info Функция создания графа на основе суще
 (arc-add '3 '1 '4)
 (arc-add '4 '1 '5)
 (arc-add '5 '4 '7)
+(arc-add '6 '1 '6)
+(arc-add '7 '6 '8)
+(arc-add '8 '7 '8)
 
 (arc-del '2 )
 (arc-del '4 )
@@ -122,5 +139,74 @@ graph-info Функция создания графа на основе суще
 
 (arc-info)
 
-(graph-info)
+(converter '2)
+(converter '4)
+(converter '5)
+(converter '6)
+(converter '7)
+(converter '8)
+
+(graph-update)
 *graph*
+
+----------------------------------------
+Итоговые входные данные :
+(vertex-add '1 '(type0 type1 7))
+(vertex-add '2 '(type1 type2))
+(vertex-add '2 '(type3 type2))
+(vertex-add '3 '(type1 type3))
+(vertex-add '4 '(type2 type4))
+(vertex-add '5 '(type2 type5))
+(vertex-add '6 '(type5 type6))
+(vertex-add '7 '(type3 type4))
+(vertex-add '8 '(type4 type8))
+(vertex-add '9 '(type4 type9))
+(vertex-add '10 '(type1 type4))
+(vertex-add '11 '(type4 type11))
+(vertex-add '12 '(type11 type12))
+
+(vertex-add '13 '(type12 type13))
+(vertex-del '13 )
+(vertex-del '15 )
+
+(vertex-info)
+
+(arc-add '1 '1 '2)
+(arc-add '2 '1 '3)
+(arc-add '3 '1 '10)
+(arc-add '4 '2 '5)
+(arc-add '5 '2 '4)
+(arc-add '6 '3 '7)
+(arc-add '7 '10 '11)
+(arc-add '8 '5 '6)
+(arc-add '9 '4 '8)
+(arc-add '10 '4 '11)
+(arc-add '11 '7 '8)
+(arc-add '12 '7 '9)
+(arc-add '13 '11 '12)
+
+(vertex-add '13 '(type12 type13))
+(vertex-add '14 '(type13 type14))
+(arc-add '14 '13 '14)
+(arc-del '15)
+(arc-del '14)
+(vertex-del '13 )
+(vertex-del '14 )
+
+(arc-info)
+
+*graph*
+(graph-update)
+*graph*
+
+(converter '2)
+(converter '3)
+(converter '4)
+(converter '5)
+(converter '6)
+(converter '7)
+(converter '8)
+(converter '9)
+(converter '10)
+(converter '11)
+(converter '12)
