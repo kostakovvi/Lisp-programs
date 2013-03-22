@@ -1,0 +1,109 @@
+;!!! install quicklisp & usocket 
+(require :asdf)
+(asdf:operate 'asdf:load-op :usocket)
+
+(defvar *my-node-address* "192.168.208.140")
+(defvar *my-port* 2348)
+
+(defvar *locator-address* "192.168.208.140")
+(defvar *locator-port* 2349)
+
+
+(defun transform-rf (input-data)
+  (let ((curr-list nil))
+    (dotimes (i (floor (array-dimension input-data 0) 2))
+      (push (+ (* (aref input-data (1+ (* 2 i))) 256) (aref input-data (* 2 i))) curr-list))
+    (cdr (nreverse curr-list))))
+
+; convert list of polar coords to cartesian ( X . Y )
+(let ((sin-table (make-array '(360)))
+    (cos-table (make-array '(360))))
+	  (dotimes (i 360)
+		(setf (aref sin-table i) (sin (/ (* (1+ i) 3.1415927) 360)))
+		(setf (aref cos-table i) (cos (/ (* (1+ i) 3.1415927) 360))))
+(defun to-cartesian (points)
+	(let ((cart-points nil))
+		(dotimes (i 360)
+			(push (cons (* (nth i points) (aref cos-table i)) (* (nth i points) (aref sin-table i))) cart-points))
+		(nreverse cart-points))))
+
+(defun socket-listener-function () 
+  (let ((socket-listener (usocket:socket-connect 
+			  nil nil :protocol :datagram :local-host *my-node-address* :local-port *my-port*))
+		(sock-sender (usocket:socket-connect *locator-address* *locator-port* :protocol :datagram)))
+    (loop (multiple-value-bind (received-data data-length sender-ip sender-port) (usocket:socket-receive socket-listener nil 722)
+			       ;(format t "Current data are: ~A ~A ~A ~A~&" (to-cartesian (transform-rf received-data)) data-length sender-ip sender-port)
+				   (setf *curr-points* (to-cartesian (transform-rf received-data)))
+				   (let* ((dat (detect-lines *curr-points* 10 100))
+							(arr (format nil "~A" dat)))
+					(usocket:socket-send sock-sender arr (length  arr)))))))
+
+--------------------------------------------------------------------
+(defparameter *ranges* ())
+(setf *ranges* '(1024 1025 1044 1044 1044 1054 906 905 904 903 905 906 907 1044 1033 1035 1056 888 888 886 885 484 1044 1034))
+*ranges*
+(defparameter *robotwidth* ())
+(setf *robotwidth* '100)
+*robotwidth*
+(defparameter *minrange* ())
+(setf *minrange* '1000)
+*minrange*
+(defparameter *savezone* ())
+*savezone*
+(defparameter *dangerzone* ())
+*dangerzone*
+
+  $ (FLOOR 7.3)     $ (FLOOR 8 3)
+   7                 2
+
+Пример 1. Предикат MEMBER1 (A L) возвращает ту часть списка L, в которой искомый атом A является первым элементом.
+
+   (DEFUN MEMBER1 (A L)
+      (COND ( (NULL L) NIL )
+            ( (EQ (CAR L) A) L )
+            (   T   (MEMBER1 A (CDR L)))
+      )
+   )
+
+-----------------------------------------------------
+(defun zones-info (*ranges* *robotwidth* *minrange*)
+(loop for i in *ranges* do (print i))
+(format t "Список расстояний: ~A значения через каждые 0.5 градусов~&" *ranges*)
+----------------------------------------------------
+(defun zones-info ()
+( let ((counter 0) (corner 0) (flag ) (scornersz 0) (scornerdz 0) (ecornersz 0) (ecornerdz 0) (srange 0) (erange 0))
+(defparameter *savezone* ())
+(defparameter *dangerzone* ())
+(format t "Размер робота: ~A ~&" *robotwidth*)
+(format t "Минимальная допустимая дистанция до препятствия: ~A ~&" *minrange*)
+(loop for i in *ranges* do 
+( progn
+	(setf counter (+ counter 1))
+	(setf corner (* counter 0.5))
+	(cond ( (null i) nil )
+	      ( (>= i *minrange*) (cond ( (null flag) nil )
+                                        ( (eq flag 0) (setf *dangerzone* (acons scornerdz (list ecornerdz) *dangerzone*))(format t "Опасная зона: ~A ~&" *dangerzone*))
+				  )				  
+				  (setf flag 1))
+	      ( (< i *minrange*) 
+  				  (cond ( (null flag) nil )
+                                        ( (eq flag 0) (progn
+							(setf ecornerdz corner)(format t "Конец опасной зоны: ~A ~&" ecornerdz)
+							(setf srange i)(format t "Начальное расстояние безопасной зоны: ~A ~&" srange)
+							(setf scornersz corner)(format t "Начало безопасной зоны: ~A ~&" scornersz)))
+					( (eq flag 1) (progn
+							(setf ecornersz corner)(format t "Конец безопасной зоны: ~A ~&" ecornersz)
+							(setf erange i)(format t "Конечное расстояние безопасной зоны: ~A ~&" erange)
+							(setf scornerdz corner)(format t "Начало опасной зоны: ~A ~&" scornerdz)
+							;нужно вставить проверку на ширину робота и зоны
+							(setf *savezone* (acons scornersz (list ecornersz) *savezone*))(format t "Безопасная зона: ~A ~&" *savezone*)
+						      ))
+				  )
+
+				  (setf flag 0))
+	)
+	(format t "Расстояние: ~A соответствует градусу: ~A флаг выставлен в:~A~&" i corner flag)))
+))
+
+
+(zones-info)
