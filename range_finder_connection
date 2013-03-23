@@ -103,7 +103,7 @@
 							(if (> widthzone *robotwidth*) (progn 
 								(setf *savezone* (acons scornersz (list ecornersz) *savezone*))(format t "БезОпасная зона: ~A ~&" *savezone*))	 
  										       (progn
-								(setf *dangerzone* (acons scornerdz (list ecornerdz) *dangerzone*))(format t "Опасная зона: ~A ~&" *dangerzone*))
+								(setf *dangerzone* (acons scornersz (list ecornersz) *dangerzone*))(format t "Опасная зона: ~A ~&" *dangerzone*))
 						        )
 						      ))
 				  )
