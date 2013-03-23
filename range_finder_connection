@@ -99,7 +99,7 @@
 							(setf erange i)(format t "Конечное расстояние безопасной зоны: ~A ~&" erange)(format t "Начальное расстояние безопасной зоны: ~A ~&" srange)
 							(setf scornerdz corner)(format t "Начало опасной зоны: ~A ~&" scornerdz)
 							(setf widthzone (isqrt (floor (- (+ (* srange srange) (* erange erange)) (* 2 srange erange (cos (/ (* (- ecornersz scornersz) 3.1415927) 180)))))))(format t "Ширина возможной безопасной зоны: ~A ~&" widthzone)
-							;добалена проверку на ширину робота и зоны
+							;добалена провеаку на ширину робота и зоны
 							(if (> widthzone *robotwidth*) (progn 
 								(setf *savezone* (acons scornersz (list ecornersz) *savezone*))(format t "БезОпасная зона: ~A ~&" *savezone*))	 
  										       (progn
