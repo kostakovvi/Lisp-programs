@@ -17,7 +17,7 @@
 
 ; convert list of polar coords to cartesian ( X . Y )
 (let ((sin-table (make-array '(360)))
-    (cos-table (make-array '(360))))
+	  (cos-table (make-array '(360))))
 	  (dotimes (i 360)
 		(setf (aref sin-table i) (sin (/ (* (1+ i) 3.1415927) 360)))
 		(setf (aref cos-table i) (cos (/ (* (1+ i) 3.1415927) 360))))
@@ -69,9 +69,12 @@
 (defun zones-info (*ranges* *robotwidth* *minrange*)
 (loop for i in *ranges* do (print i))
 (format t "Список расстояний: ~A значения через каждые 0.5 градусов~&" *ranges*)
+(cos (/ (* (- ecornersz scornersz) 3.1415927) 180)))
+(isqrt (- (+ (* srange srange) (* erange erange)) (* 2 srange erange (cos (/ (* (- ecornersz scornersz) 3.1415927) 180))))))
+(isqrt (floor (- (+ (* 2 2) (* 4 4)) (* 2 2 4 (cos (/ (* (- 2 0.5) 3.1415927) 180)) ) )))
 ----------------------------------------------------
 (defun zones-info ()
-( let ((counter 0) (corner 0) (flag ) (scornersz 0) (scornerdz 0) (ecornersz 0) (ecornerdz 0) (srange 0) (erange 0))
+( let ((counter 0) (corner 0) (flag ) (scornersz 0) (scornerdz 0) (ecornersz 0) (ecornerdz 0) (srange 0) (erange 0) (widthzone ))
 (defparameter *savezone* ())
 (defparameter *dangerzone* ())
 (format t "Размер робота: ~A ~&" *robotwidth*)
@@ -81,7 +84,7 @@
 	(setf counter (+ counter 1))
 	(setf corner (* counter 0.5))
 	(cond ( (null i) nil )
-	      ( (>= i *minrange*) (cond ( (null flag) nil )
+	      ( (>= i *minrange*) (cond ( (null flag) (setf srange i))
                                         ( (eq flag 0) (setf *dangerzone* (acons scornerdz (list ecornerdz) *dangerzone*))(format t "Опасная зона: ~A ~&" *dangerzone*))
 				  )				  
 				  (setf flag 1))
@@ -93,16 +96,22 @@
 							(setf scornersz corner)(format t "Начало безопасной зоны: ~A ~&" scornersz)))
 					( (eq flag 1) (progn
 							(setf ecornersz corner)(format t "Конец безопасной зоны: ~A ~&" ecornersz)
-							(setf erange i)(format t "Конечное расстояние безопасной зоны: ~A ~&" erange)
+							(setf erange i)(format t "Конечное расстояние безопасной зоны: ~A ~&" erange)(format t "Начальное расстояние безопасной зоны: ~A ~&" srange)
 							(setf scornerdz corner)(format t "Начало опасной зоны: ~A ~&" scornerdz)
-							;нужно вставить проверку на ширину робота и зоны
-							(setf *savezone* (acons scornersz (list ecornersz) *savezone*))(format t "Безопасная зона: ~A ~&" *savezone*)
+							(setf widthzone (isqrt (floor (- (+ (* srange srange) (* erange erange)) (* 2 srange erange (cos (/ (* (- ecornersz scornersz) 3.1415927) 180)))))))(format t "Ширина возможной безопасной зоны: ~A ~&" widthzone)
+							;добалена проверку на ширину робота и зоны
+							(if (> widthzone *robotwidth*) (progn 
+								(setf *savezone* (acons scornersz (list ecornersz) *savezone*))(format t "БезОпасная зона: ~A ~&" *savezone*))	 
+ 										       (progn
+								(setf *dangerzone* (acons scornersz (list ecornersz) *dangerzone*))(format t "Опасная зона: ~A ~&" *dangerzone*))
+						        )
 						      ))
 				  )
-
 				  (setf flag 0))
 	)
 	(format t "Расстояние: ~A соответствует градусу: ~A флаг выставлен в:~A~&" i corner flag)))
+(setf *savezone* (reverse *savezone*))(format t "Безопасная зона: ~A ~&" *savezone*)
+(setf *dangerzone* (reverse *dangerzone*))(format t "Опасная зона: ~A ~&" *dangerzone*)
 ))
 
 
