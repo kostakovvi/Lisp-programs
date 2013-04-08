@@ -2,11 +2,11 @@
 (require :asdf)
 (asdf:operate 'asdf:load-op :usocket)
 
-(defvar *my-node-address* "192.168.208.140")
-(defvar *my-port* 2348)
+(defvar *my-node-address* "192.168.208.152")
+(defvar *my-port* 2351)
 
-(defvar *locator-address* "192.168.208.140")
-(defvar *locator-port* 2349)
+(defvar *locator-address* "192.168.208.110")
+(defvar *locator-port* 2352)
 
 
 (defun transform-rf (input-data)
@@ -33,10 +33,37 @@
 		(sock-sender (usocket:socket-connect *locator-address* *locator-port* :protocol :datagram)))
     (loop (multiple-value-bind (received-data data-length sender-ip sender-port) (usocket:socket-receive socket-listener nil 722)
 			       ;(format t "Current data are: ~A ~A ~A ~A~&" (to-cartesian (transform-rf received-data)) data-length sender-ip sender-port)
-				   (setf *curr-points* (to-cartesian (transform-rf received-data)))
-				   (let* ((dat (detect-lines *curr-points* 10 100))
-							(arr (format nil "~A" dat)))
+				   (setf *ranges* (transform-rf received-data))
+				   (let ((arr (format nil "~A" (zones-info))))
 					(usocket:socket-send sock-sender arr (length  arr)))))))
+
+--------------------------------------------
+(defun server-main()
+;; start server threads
+(main-socket-listener 'start)
+(do ((command-string
+ 	(string upcase (read-line))
+	(string upcase (read-line))))
+    ((string-equal command-string "QUIT")
+   0)
+   (cond
+    ((string-equal command-string "INFO")
+     (format t "~A" *ranges*))
+   ( t (format t "Unknown command: ~A~&" command-string)))))
+
+
+--------------------------------------
+(main-socket-listener 'start)
+--------------------------------------
+
+
+(let ((thread-listener nil)) ;;; !!! add error ADDRINUSE processing
+  (defun main-socket-listener (cmd)
+    (cond ((eq cmd 'close) (sb-thread:terminate-thread thread-listener))
+	  ((eq cmd 'start)  
+	      (setq thread-listener
+		 (sb-thread:make-thread #'socket-listener-function :name "thread-listener")))
+	  (t nil))))
 
 --------------------------------------------------------------------
 (defparameter *ranges* ())
@@ -74,7 +101,7 @@
 (isqrt (floor (- (+ (* 2 2) (* 4 4)) (* 2 2 4 (cos (/ (* (- 2 0.5) 3.1415927) 180)) ) )))
 ----------------------------------------------------
 (defun zones-info ()
-( let ((counter 0) (corner 0) (flag ) (scornersz 0) (scornerdz 0) (ecornersz 0) (ecornerdz 0) (srange 0) (erange 0) (widthzone ))
+( let ((counter 0) (corner 0) (flag ) (output-result) (scornersz 0.0) (scornerdz 0.0) (ecornersz 0.0) (ecornerdz 0.0) (srange 0) (erange 0) (widthzone ))
 (defparameter *savezone* ())
 (defparameter *dangerzone* ())
 (format t "Размер робота: ~A ~&" *robotwidth*)
@@ -89,16 +116,18 @@
 				  )				  
 				  (setf flag 1))
 	      ( (< i *minrange*) 
-  				  (cond ( (null flag) nil )
+  				  (cond ( (null flag) (progn (setf srange i)(setf ecornerdz corner)(setf scornersz corner)))
                                         ( (eq flag 0) (progn
-							(setf ecornerdz corner)(format t "Конец опасной зоны: ~A ~&" ecornerdz)
-							(setf srange i)(format t "Начальное расстояние безопасной зоны: ~A ~&" srange)
-							(setf scornersz corner)(format t "Начало безопасной зоны: ~A ~&" scornersz)))
+							(setf ecornerdz corner) 
+							(setf srange i) 
+							(setf scornersz corner) ))
 					( (eq flag 1) (progn
-							(setf ecornersz corner)(format t "Конец безопасной зоны: ~A ~&" ecornersz)
-							(setf erange i)(format t "Конечное расстояние безопасной зоны: ~A ~&" erange)(format t "Начальное расстояние безопасной зоны: ~A ~&" srange)
-							(setf scornerdz corner)(format t "Начало опасной зоны: ~A ~&" scornerdz)
-							(setf widthzone (isqrt (floor (- (+ (* srange srange) (* erange erange)) (* 2 srange erange (cos (/ (* (- ecornersz scornersz) 3.1415927) 180)))))))(format t "Ширина возможной безопасной зоны: ~A ~&" widthzone)							
+							(setf ecornersz corner) 
+							(setf erange i)(format t "Конечное расстояние безопасной зоны: ~A ~&" erange) 
+							(setf scornerdz corner)
+							
+							(setf ecornerdz corner)                                                          
+							(setf widthzone (isqrt (floor (- (+ (* srange srange) (* erange erange)) (* 2 srange erange (cos (/ (* (- ecornersz scornersz) 3.1415927) 180))))))) 							
 							(if (> widthzone *robotwidth*) (progn 
 								(setf *savezone* (acons scornersz (list ecornersz) *savezone*))(format t "БезОпасная зона: ~A ~&" *savezone*))	 
  										       (progn
@@ -114,7 +143,13 @@
 	(setf *dangerzone* (acons ecornerdz (list corner) *dangerzone*)))
 (setf *savezone* (reverse *savezone*))(format t "Безопасная зона: ~A ~&" *savezone*)
 (setf *dangerzone* (reverse *dangerzone*))(format t "Опасная зона: ~A ~&" *dangerzone*)
+(setf output-result (list *dangerzone* *savezone*))
 ))
 
 
 (zones-info)
+
+(setf *ranges* '( 1060 1070 ))
+(setf *ranges* '(900 888 1024 1025 1044 1005 1060 1070 1060 899 999))
+(setf *ranges* '(900  1024 1025 1044 1005 1060 1070 999))
+(setf *ranges* '(900  1024 1025 1044 1005 1060 1070 1080))
