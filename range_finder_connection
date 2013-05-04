@@ -80,18 +80,6 @@
 (defparameter *dangerzone* ())
 *dangerzone*
 
-  $ (FLOOR 7.3)     $ (FLOOR 8 3)
-   7                 2
-
-Пример 1. Предикат MEMBER1 (A L) возвращает ту часть списка L, в которой искомый атом A является первым элементом.
-
-   (DEFUN MEMBER1 (A L)
-      (COND ( (NULL L) NIL )
-            ( (EQ (CAR L) A) L )
-            (   T   (MEMBER1 A (CDR L)))
-      )
-   )
-
 -----------------------------------------------------
 (defun zones-info (*ranges* *robotwidth* *minrange*)
 (loop for i in *ranges* do (print i))
@@ -142,7 +130,7 @@
 	(setf *dangerzone* (acons ecornersz (list corner) *dangerzone*))
 	(setf *dangerzone* (acons ecornerdz (list corner) *dangerzone*)))
 (setf *savezone* (reverse *savezone*))(format t "Безопасная зона: ~A ~&" *savezone*)
-(setf *dangerzone* (reverse *dangerzone*))(format t "Опасная зона: ~A ~&" *dangerzone*)
+(setf *dangerzone* (update-zone (reverse *dangerzone*)))(format t "Опасная зона: ~A ~&" *dangerzone*)
 (setf output-result (list *dangerzone* *savezone*))
 ))
 
@@ -153,3 +141,61 @@
 (setf *ranges* '(900 888 1024 1025 1044 1005 1060 1070 1060 899 999))
 (setf *ranges* '(900  1024 1025 1044 1005 1060 1070 999))
 (setf *ranges* '(900  1024 1025 1044 1005 1060 1070 1080))
+
+-------------------------------------------------------------------
+
+   (DEFUN update-zone (L)	
+      (COND ( (NULL L) nil )
+            ( (NULL (CDR L)) l )
+            (  T (progn 		
+		(if (eq (cadr(car l)) (caar(cdr l)))
+		(progn
+		(update-zone (reverse (append (nbutlast (reverse l) 2) (list(delete (caar(cdr l)) (nconc (car l) (cadr l)))))) 			) )	     
+		(CONS (CAR L) (update-zone (CDR L))) ) ) )
+      )
+   ) 
+-------------------------------------------
+(defparameter *x* ())
+(setf *x* '((1 2) (2 3) (4 5) (6 7)))
+(list(delete (caar(cdr *x*)) (nconc (car *x*) (cadr *x*))))
+
+(reverse (append (nbutlast (reverse *x*) 2) (list(delete (caar(cdr *x*)) (nconc (car *x*) (cadr *x*))))))
+(update-zone '((1 2) (2 3) (4 5) (6 7)))
+
+---------------------------------------------
+
+(defun watch-f (x lst)
+ (cond ( (null lst) nil )
+	    ( (equal x 360.0) 10000.0 )
+            (  (null (assoc x lst)) (watch-f (+ x 0.5) lst) ) 	    
+            (  t  (assoc x lst) )
+      )
+)
+
+(defun watch-b (x lst)
+ (cond ( (null lst) nil )
+	    ( (equal x 0.0) -10000.0 )
+            (  (null (rassoc1 x lst)) (watch-b (- x 0.5) lst) ) 	    
+            (  t  (rassoc1 x lst) )
+      )
+)
+
+(DEFUN RASSOC1 (DATA ALIST)
+      (COND ( (NULL ALIST) NIL )
+            ( (EQUAL (CAR(CDAR ALIST)) DATA) (CAR ALIST) )          
+            (  T  (RASSOC1 DATA (CDR ALIST)) )
+      )
+   )
+------------------------------------------------------------------------
+(values-list (list a b c)) == (values a b c)
+(nth-value 0 (values 'a 'b)) =>  A
+(nth-value 8 (values-list *ranges*))
+
+(defun corrector(x)
+(if (> (nth-value x (values-list *ranges*)) *minrange*)
+(format t "БезОпасная зона: ~A ~&" *savezone*)
+(format t "Опасная зона: ~A ~&" *dangerzone*))
+)
+
+
+(corrector)
