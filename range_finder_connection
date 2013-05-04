@@ -209,7 +209,7 @@
 (nth-value 8 (values-list *ranges*))
 -------------------------------------------------------------
 (defun corrector(x)
-(if (eq (watch-s1 (* ( - x 1) 0.5) *savezone*) (watch-s2 (* ( - x 1) 0.5) *savezone*) ) 
+(if (eq (watch-s1 (* x 0.5) *savezone*) (watch-s2 (* x 0.5) *savezone*) ) 
 (progn
 (format t "БезОпасная зона: ~A ~&" *savezone*)
 (watch-s1 (* x 0.5) *savezone*))
