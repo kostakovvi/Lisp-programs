@@ -130,6 +130,7 @@
 	(setf *dangerzone* (acons ecornersz (list corner) *dangerzone*))
 	(setf *dangerzone* (acons ecornerdz (list corner) *dangerzone*)))
 (setf *savezone* (reverse *savezone*))(format t "Безопасная зона: ~A ~&" *savezone*)
+(format t "Опасная зона: ~A ~&" (reverse *dangerzone*))
 (setf *dangerzone* (update-zone (reverse *dangerzone*)))(format t "Опасная зона: ~A ~&" *dangerzone*)
 (setf output-result (list *dangerzone* *savezone*))
 ))
@@ -166,7 +167,7 @@
 
 (defun watch-f (x lst)
  (cond ( (null lst) nil )
-	    ( (equal x 360.0) 10000.0 )
+	    ( (equal x 360.5) (list '(10000.0 10000.0)) )
             (  (null (assoc x lst)) (watch-f (+ x 0.5) lst) ) 	    
             (  t  (assoc x lst) )
       )
@@ -174,8 +175,24 @@
 
 (defun watch-b (x lst)
  (cond ( (null lst) nil )
-	    ( (equal x 0.0) -10000.0 )
+	    ( (equal x -0.5) (list '(-10000.0 -10000.0)) )
             (  (null (rassoc1 x lst)) (watch-b (- x 0.5) lst) ) 	    
+            (  t  (rassoc1 x lst) )
+      )
+)
+
+(defun watch-s1 (x lst)
+ (cond ( (null lst) nil )
+	    ( (equal x -0.5) (list '(-10000.0 -10000.0)) )
+            (  (null (assoc x lst)) (watch-s1 (- x 0.5) lst) ) 	    
+            (  t  (assoc x lst) )
+      )
+)
+
+(defun watch-s2 (x lst)
+ (cond ( (null lst) nil )
+	    ( (equal x 360.5) (list '(10000.0 10000.0)) )
+            (  (null (rassoc1 x lst)) (watch-s2 (+ x 0.5) lst) ) 	    
             (  t  (rassoc1 x lst) )
       )
 )
@@ -190,12 +207,22 @@
 (values-list (list a b c)) == (values a b c)
 (nth-value 0 (values 'a 'b)) =>  A
 (nth-value 8 (values-list *ranges*))
-
+-------------------------------------------------------------
 (defun corrector(x)
-(if (> (nth-value x (values-list *ranges*)) *minrange*)
+(if (eq (watch-s1 (* ( - x 1) 0.5) *savezone*) (watch-s2 (* ( - x 1) 0.5) *savezone*) ) 
+(progn
 (format t "БезОпасная зона: ~A ~&" *savezone*)
-(format t "Опасная зона: ~A ~&" *dangerzone*))
+(watch-s1 (* x 0.5) *savezone*))
+(progn
+(format t "Опасная зона: ~A ~&" *dangerzone*)
+(if (< (- (car (watch-f (* x 0.5) *savezone*)) (* x 0.5) ) (- (* x 0.5) (cadr (watch-b (* x 0.5) *savezone*)) )) 
+(watch-f (* x 0.5) *savezone*)
+(watch-b (* x 0.5) *savezone*)) ) )
 )
 
-
-(corrector)
+(corrector '10)
+---------------------------------------------------------------------
+(if (> (nth-value  x (values-list *ranges*)) *minrange*)
+(eq (watch-s1 (* ( - x 1) 0.5) *savezone*) (watch-s2 (* ( - x 1) 0.5) *savezone*) )
+(- (car (watch-f (* ( - x 1) 0.5) *savezone*)) (* ( - x 1) 0.5) )
+(- (* ( - x 1) 0.5) (cadr (watch-b (* ( - x 1) 0.5) *savezone*)) )
