@@ -142,20 +142,21 @@
 (setf *ranges* '(900 888 1024 1025 1044 1005 1060 1070 1060 899 999))
 (setf *ranges* '(900  1024 1025 1044 1005 1060 1070 999))
 (setf *ranges* '(900  1024 1025 1044 1005 1060 1070 1080))
+(setf *ranges* '(989 1024 1025 1044 1044 1044 1054 1056 1055 1054 1044 1044 1044 906 905 904 903 905 906 907 1044 1033 1035 1056 888 888 886 885 777 655 484 1044 1034 1045 1099 1111 1121 900 900))
 
--------------------------------------------------------------------
+----------------------------------------------------ф-ция преобразовывает опасную зону
 
-   (DEFUN update-zone (L)	
-      (COND ( (NULL L) nil )
-            ( (NULL (CDR L)) l )
-            (  T (progn 		
+   (defun update-zone (l)	
+      (cond ( (null l) nil )
+            ( (null (cdr l)) l )
+            (  t (progn 		
 		(if (eq (cadr(car l)) (caar(cdr l)))
 		(progn
 		(update-zone (reverse (append (nbutlast (reverse l) 2) (list(delete (caar(cdr l)) (nconc (car l) (cadr l)))))) 			) )	     
-		(CONS (CAR L) (update-zone (CDR L))) ) ) )
+		(cons (car l) (update-zone (cdr l))) ) ) )
       )
    ) 
--------------------------------------------
+-------------------------------------------конец ф-ции преобразов.
 (defparameter *x* ())
 (setf *x* '((1 2) (2 3) (4 5) (6 7)))
 (list(delete (caar(cdr *x*)) (nconc (car *x*) (cadr *x*))))
@@ -163,7 +164,7 @@
 (reverse (append (nbutlast (reverse *x*) 2) (list(delete (caar(cdr *x*)) (nconc (car *x*) (cadr *x*))))))
 (update-zone '((1 2) (2 3) (4 5) (6 7)))
 
----------------------------------------------
+---------------------------------------------вспомогательные функции для корректора
 
 (defun watch-f (x lst)
  (cond ( (null lst) nil )
@@ -203,26 +204,37 @@
             (  T  (RASSOC1 DATA (CDR ALIST)) )
       )
    )
-------------------------------------------------------------------------
+------------------------------------------------------------------------конец вспомог. ф-ций
 (values-list (list a b c)) == (values a b c)
 (nth-value 0 (values 'a 'b)) =>  A
-(nth-value 8 (values-list *ranges*))
--------------------------------------------------------------
+(nth-value 8 (values-list *ranges*)) 
+-------------------------------------------------------------функция корректор
 (defun corrector(x)
+(let ((r (+ (floor (/(*(acos (/ (- (* *minrange* *minrange* 2) (* (/ *robotwidth* 2) (/ *robotwidth* 2))) (* *minrange* *minrange* 2))) 180) 3.1415927)) 0.5)))
 (if (eq (watch-s1 (* x 0.5) *savezone*) (watch-s2 (* x 0.5) *savezone*) ) 
 (progn
-(format t "БезОпасная зона: ~A ~&" *savezone*)
-(watch-s1 (* x 0.5) *savezone*))
+	(format t "БезОпасная зона: ~A ~A~&" *savezone* r)
+	(watch-s1 (* x 0.5) *savezone*)
+	(cond ( (< (- (* x 0.5) (car (watch-s1 (* x 0.5) *savezone*))) r) (format t "Направление: LEFT ~A" (- (+ (car (watch-s1 (* x 0.5) *savezone*)) r) (* x 0.5) )))
+              ( (< (- (cadr (watch-s1 (* x 0.5) *savezone*)) (* x 0.5)) r) (format t "Направление: RIGHT ~A" (- (+ (* x 0.5) r) (cadr (watch-s1 (* x 0.5) *savezone*)) )))	     
+	      ( t (format t "Корректировка не требуется") )	
+	)
+)
 (progn
 (format t "Опасная зона: ~A ~&" *dangerzone*)
-(if (< (- (car (watch-f (* x 0.5) *savezone*)) (* x 0.5) ) (- (* x 0.5) (cadr (watch-b (* x 0.5) *savezone*)) )) 
-(watch-f (* x 0.5) *savezone*)
-(watch-b (* x 0.5) *savezone*)) ) )
-)
+(if (< (- (car (watch-f (* x 0.5) *savezone*)) (* x 0.5) ) (- (* x 0.5) (cadr (watch-b (* x 0.5) *savezone*)) )) 	
+	(format t "Направление: LEFT ~A" (- (+ (car (watch-f (* x 0.5) *savezone*)) r) (* x 0.5)) )	
+	(format t "Направление: RIGHT ~A"  (- (* x 0.5) (- (cadr (watch-b (* x 0.5) *savezone*)) r)) )
+	) ) )
+))
 
 (corrector '10)
----------------------------------------------------------------------
+--------------------------------------------------------------------конец ф-ции корректора
 (if (> (nth-value  x (values-list *ranges*)) *minrange*)
 (eq (watch-s1 (* ( - x 1) 0.5) *savezone*) (watch-s2 (* ( - x 1) 0.5) *savezone*) )
 (- (car (watch-f (* ( - x 1) 0.5) *savezone*)) (* ( - x 1) 0.5) )
 (- (* ( - x 1) 0.5) (cadr (watch-b (* ( - x 1) 0.5) *savezone*)) )
+(+ (floor (/(*(acos 0) 180) 3.1415927)) 0.5)
+(* *minrange* *minrange* 2)
+(acos (/ (- (* *minrange* *minrange* 2) (* (/ *robotwidth* 2) (/ *robotwidth* 2))) (* *minrange* *minrange* 2)))
+(+ (floor (/(*(acos (/ (- (* *minrange* *minrange* 2) (* (/ *robotwidth* 2) (/ *robotwidth* 2))) (* *minrange* *minrange* 2))) 180) 3.1415927)) 0.5)
