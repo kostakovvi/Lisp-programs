@@ -54,7 +54,7 @@
 
 --------------------------------------
 (main-socket-listener 'start)
---------------------------------------
+---------------------------------------
 
 
 (let ((thread-listener nil)) ;;; !!! add error ADDRINUSE processing
