@@ -1,0 +1,99 @@
+(defun way (graph root end)
+      (cond ( (null graph) nil )
+            (  t  (defi graph (list root) (list root) end) )
+      )
+   )
+
+
+
+(defun defi (graph visited path end)
+   ; visited - список уже просмотренных вершин         ;
+   ; path - список вершин, определяющих путь просмотра ;
+   ; end  - конечная вершина пути                      ;
+      (cond ( (null path) (reverse visited) )
+            ( t  (cond ( (null (expnd graph visited (car path)))
+                            (defi graph visited (cdr path) end)
+                       )
+                       ( (eq (expnd graph visited (car path)) end)
+                                (reverse (cons end path)) )
+                       (  t  (defi graph
+                                   (cons (expnd graph visited
+                                                (car path))
+                                         visited)
+                                   (cons (expnd graph visited
+                                                (car path))
+                                         path)
+                                   end) )) )
+      )
+   )
+
+
+
+(defun expnd (graph visited vertex)
+   ; Выбор следующей еще не просмотренной вершины ;
+   ;              соседней с vertex               ;
+      (cond ( (null (neighbour vertex graph)) nil )
+            (  t  (firstnotvisited
+                             visited
+                             (neighbour vertex graph))
+            )
+      )
+   )
+
+
+
+(defun firstnotvisited (visited vlist)
+      (cond ( (null vlist) nil )
+            (  t  (cond ( (null (member (car vlist) visited))
+                             (car vlist)
+                        )
+                        (  t  (firstnotvisited
+                                           visited
+                                           (cdr vlist))
+                        )
+                  )
+            )
+      )
+   )
+
+
+(defun neighbour (x graph)
+      (cond ( (null (assoc x graph)) nil )
+            (  t  (cdr (assoc x graph)) )
+      )
+   )
+   --------------------------------------------------------------------------------
+   Проверка маршрута
+   (defun testway (graph waygraph)
+      (cond ( (null graph) nil )
+            (  t (cond ( (null (cdr waygraph)) nil )
+                 (  t  (testfunc graph (car waygraph) (cdr waygraph)) )
+                 )
+            )
+      )
+   )
+
+
+(defun testfunc (graph firstvertex waylist)
+   ; Выбор следующей вершины из маршрута ; 
+  (cond ( (null waylist) (format t "Маршрут задан корректно~%") )
+              (  t  (cond ( (null (member (car waylist) (neighbour firstvertex graph)))
+                             (format t "Маршрут задан НЕ корректно, нет дуги между вершиной ~d и вершиной ~d!~%" firstvertex (car waylist))
+                        )
+                        (  t  (testfunc
+                                           graph
+                                           (car waylist)
+					   (cdr waylist))
+                        )
+                  )
+            )
+      )
+   )
+
+
+
+(defun neighbour (x graph)
+      (cond ( (null (assoc x graph)) nil )
+            (  t  (cdr (assoc x graph)) )
+      )
+   )
